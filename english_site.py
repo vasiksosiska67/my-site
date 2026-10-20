@@ -1,13 +1,11 @@
 import http.server
 import json
+import os  # Добавили для связи с сервером Render
 import random
-import socketserver
-import threading
-import tkinter as tk
-import webbrowser
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlparse
 
-PORT = 8095
+# Порт теперь автоматически берется от сервера Render, либо ставится 8095 для компьютера
+PORT = int(os.environ.get('PORT', 8095))
 
 DB_QUIZ = [
     {
@@ -178,169 +176,247 @@ HTML_CODE = """<!DOCTYPE html>
         </div>
     </div>
     <script>
-        let currentQuizData = null, currentTrainerData = null;
+        let currentQuiz = {}, currentTrainer = {}, currentLessonIndex = 0, selectedLessonWords = [];
+        
         function switchTab(t) {
             document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
             document.querySelectorAll('nav button').forEach(e => e.classList.remove('active'));
             document.getElementById(t).classList.add('active');
-            event.currentTarget.classList.add('active');
-            if (t === 'profile') updateStats();
-            if (t === 'lessons') loadLessons();
+            if(event) event.target.classList.add('active');
+            updateStats();
         }
-        function loadNextQuiz() {
-            document.getElementById('quiz-res').textContent = "";
-            fetch('/api/get_quiz').then(r => r.json()).then(d => {
-                currentQuizData = d;
-                document.getElementById('quiz-q').textContent = d.q;
-                const o = document.getElementById('quiz-opts');
-                o.innerHTML = "";
-                d.a.forEach((opt, i) => {
-                    let b = document.createElement('button');
-                    b.className="action-btn";
-                    b.textContent = opt;
-                    b.onclick = () => submitQuizAnswer(i);
-                    o.appendChild(b);
+
+        function loadQuiz() {
+            fetch('/api/get_quiz').then(r => r.json()).then(data => {
+                currentQuiz = data;
+                document.getElementById('quiz-q').innerText = data.q;
+                let optsDiv = document.getElementById('quiz-opts');
+                optsDiv.innerHTML = '';
+                document.getElementById('quiz-res').innerText = '';
+                data.a.forEach((opt, idx) => {
+                    let btn = document.createElement('button');
+                    btn.className = 'action-btn';
+                    btn.innerText = opt;
+                    btn.onclick = () => checkQuiz(idx);
+                    optsDiv.appendChild(btn);
                 });
             });
         }
-        function submitQuizAnswer(i) {
+
+        function checkQuiz(idx) {
             fetch('/api/check_quiz', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `index=${i}&correct=${currentQuizData.c}`
-            }).then(r => r.json()).then(res => {
-                const rD = document.getElementById('quiz-res');
-                if (res.status === 'success') {
-                    rD.style.color = "#2ecc71";
-                    rD.textContent = "🎉 Правильно!";
-                    setTimeout(loadNextQuiz, 1000);
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `index=${idx}&correct=${currentQuiz.c}`
+            }).then(r => r.json()).then(data => {
+                let res = document.getElementById('quiz-res');
+                if(data.status === 'success') {
+                    res.innerHTML = '<span style="color:green;">Правильно! 🎉</span>';
+                    setTimeout(loadQuiz, 1500);
                 } else {
-                    rD.style.color = "#e74c3c";
-                    rD.textContent = "❌ Неверно!";
+                    res.innerHTML = '<span style="color:red;">Неверно, попробуй еще раз! ❌</span>';
                 }
-            });
-        }
-        function loadNextWord() {
-            document.getElementById('train-input').value = "";
+                updateStats();
+});
+}
+function loadTrainer() {
+fetch('/api/get_word').then(r => r.json()).then(data => {
+currentTrainer = data;
+document.getElementById('train-q').innerText = Как переводится: "${data.ru}"?;
+document.getElementById('train-input').value = '';
+document.getElementById('train-res').innerText = '';
+});
+}
+function checkTrainer() {
+let input = document.getElementById('train-input').value.trim().toLowerCase();
+fetch('/api/check_trainer', {
+method: 'POST',
+headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+body: user_ans=${encodeURIComponent(input)}&correct_ans=${encodeURIComponent(currentTrainer.en)}
+}).then(r => r.json()).then(data => {
+let res = document.getElementById('train-res');
+if(data.status === 'success') {
+res.innerHTML = 'Великолепно! +1 балл 🌟';
+setTimeout(loadTrainer, 1500);
+} else {
+res.innerHTML = <span style="color:red;">Ошибка. Правильный ответ: ${currentTrainer.en}</span>;
+}
+updateStats();
+});
+}
+function translateText() {
+let text = document.getElementById('trans-input').value.trim().toLowerCase();
+fetch('/api/translate', {
+method: 'POST',
+headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+body: text=${encodeURIComponent(text)}
+}).then(r => r.json()).then(data => {
+document.getElementById('trans-output').innerText = data.result;
+});
+}
+function loadLessons() {
+fetch('/api/get_lessons').then(r => r.json()).then(lessons => {
+fetch('/api/get_stats').then(r => r.json()).then(stats => {
+let list = document.getElementById('lessons-list');
+list.innerHTML = '';
+lessons.forEach((l, idx) => {
+let box = document.createElement('div');
+box.className = lesson-box ${idx > stats.lessons_completed ? 'locked' : ''};
+box.innerHTML = <h3>${l.title}</h3><p>${l.task}</p>;
+if(idx === stats.lessons_completed) {
+let buildArea = document.createElement('div');
+buildArea.style.margin = '10px 0';
+buildArea.style.minHeight = '40px';
+buildArea.style.borderBottom = '2px dashed #ccc';
+buildArea.id = 'lesson-build';
+box.appendChild(buildArea);
+let chipsArea = document.createElement('div');
+selectedLessonWords = [];
+l.words.forEach(word => {
+let chip = document.createElement('span');
+chip.className = 'word-chip';
+chip.innerText = word;
+chip.onclick = () => {
+if(!selectedLessonWords.includes(word)) {
+selectedLessonWords.push(word);
+let bChip = document.createElement('span');
+bChip.className = 'word-chip';
+bChip.innerText = word;
+buildArea.appendChild(bChip);
+}
+};
+chipsArea.appendChild(chip);
+});
+box.appendChild(chipsArea);
+let checkBtn = document.createElement('button');
+checkBtn.className = 'action-btn';
+checkBtn.style.marginTop = '10px';
+checkBtn.innerText = 'Проверить сборку';
+checkBtn.onclick = () => {
+let ans = selectedLessonWords.join(' ');
+fetch('/api/check_lesson', {
+method: 'POST',
+headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+body: user_ans=${encodeURIComponent(ans)}&correct_ans=${encodeURIComponent(l.correct)}
+}).then(r => r.json()).then(res => {
+alert(res.status === 'success' ? 'Урок пройден! 🎉' : 'Неправильный порядок слов.');
+loadLessons();
+updateStats();
+});
+};
+box.appendChild(checkBtn);
+} else if(idx < stats.lessons_completed) {
+box.innerHTML += 'Пройдено ✓';
+} else {
+box.innerHTML += '🔒 Заблокировано';
+}
+list.appendChild(box);
+});
+});
+});
+}
+function updateStats() {
+fetch('/api/get_stats').then(r => r.json()).then(data => {
+document.getElementById('stat-quiz').innerText = data.quiz_score;
+document.getElementById('stat-train').innerText = data.train_score;
+document.getElementById('stat-lessons').innerText = data.lessons_completed;
+});
+}
+// Инициализация при открытии сайта
+loadQuiz();
+loadTrainer();
+loadLessons();
+updateStats();
+
+
+
 """
-
-
 class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
-
-    def do_GET(self):
-        if self.path in ["/", "/index.html"]:
-            self.send_response(200)
-            self.send_header("Content-type", "text/html; charset=utf-8")
-            self.end_headers()
-            self.wfile.write(HTML_CODE.encode("utf-8"))
-            return
-        if self.path == "/api/get_quiz":
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(random.choice(DB_QUIZ)).encode("utf-8"))
-            return
-        if self.path == "/api/get_word":
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(random.choice(DB_WORDS)).encode("utf-8"))
-            return
-        if self.path == "/api/get_lessons":
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            payload = {
-                "lessons": DB_LESSONS,
-                "completed": session_data["lessons_completed"],
-            }
-            self.wfile.write(json.dumps(payload).encode("utf-8"))
-            return
-        if self.path == "/api/get_stats":
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(session_data).encode("utf-8"))
-            return
-        self.send_error(404, "Not Found")
-
-    def do_POST(self):
-        content_length = int(self.headers["Content-Length"])
-        post_data = self.rfile.read(content_length).decode("utf-8")
-        params = parse_qs(post_data)
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.end_headers()
-
-        if self.path == "/api/check_quiz":
-            if params.get("index", [""]) == params.get("correct", [""]):
-                session_data["quiz_score"] += 1
-                response = {"status": "success"}
-            else:
-                response = {"status": "fail"}
-            self.wfile.write(json.dumps(response).encode("utf-8"))
-            return
-
-        if self.path == "/api/check_word":
-            user = params.get("user_answer", [""]).strip().lower()
-            corr = params.get("correct_answer", [""]).strip().lower()
-            if user == corr:
-                session_data["train_score"] += 1
-                response = {"status": "success"}
-            else:
-                response = {"status": "fail"}
-            self.wfile.write(json.dumps(response).encode("utf-8"))
-            return
-
-        if self.path == "/api/translate":
-            text = params.get("text", [""]).strip().lower()
-            translated = TRANSLATE_DICT.get(
-                text,
-                "Фраза не найдена в демо-словаре. Попробуйте 'привет' или 'я учусь'",
-            )
-            self.wfile.write(json.dumps({"result": translated}).encode("utf-8"))
-            return
-
-        if self.path == "/api/check_lesson":
-            les_id = int(params.get("id", ["0"]))
-            ans = params.get("answer", [""]).strip()
-            correct_ans = next(
-                (l["correct"] for l in DB_LESSONS if l["id"] == les_id), ""
-            )
-            if ans == correct_ans:
-                if session_data["lessons_completed"] < les_id:
-                    session_data["lessons_completed"] = les_id
-                response = {"status": "success"}
-            else:
-                response = {"status": "fail"}
-            self.wfile.write(json.dumps(response).encode("utf-8"))
-            return
-
-
-def start_server():
-    with socketserver.TCPServer(("", PORT), AdvancedRouterHandler) as httpd:
-        httpd.serve_forever()
-
-
-def open_site():
-    webbrowser.open(f"http://localhost:{PORT}")
-
-
-if __name__ == "__main__":
-    threading.Thread(target=start_server, daemon=True).start()
-    open_site()
-    root = tk.Tk()
-    root.title("English Server Ultimate")
-    root.geometry("350x120")
-    tk.Label(
-        root, text="Сервер English Ultimate запущен!", font=("Arial", 11, "bold")
-    ).pack(pady=15)
-    tk.Button(
-        root,
-        text="Перейти на сайт",
-        font=("Arial", 11),
-        bg="#1e3c72",
-        fg="white",
-        command=open_site,
-    ).pack(pady=5)
-    root.mainloop()
+def do_GET(self):
+url_path = urlparse(self.path).path
+if url_path == "/api/get_stats":
+self.send_response(200)
+self.send_header("Content-type", "application/json")
+self.end_headers()
+self.wfile.write(json.dumps(session_data).encode("utf-8"))
+return
+elif url_path == "/api/get_quiz":
+self.send_response(200)
+self.send_header("Content-type", "application/json")
+self.end_headers()
+self.wfile.write(json.dumps(random.choice(DB_QUIZ)).encode("utf-8"))
+return
+elif url_path == "/api/get_word":
+self.send_response(200)
+self.send_header("Content-type", "application/json")
+self.end_headers()
+self.wfile.write(json.dumps(random.choice(DB_WORDS)).encode("utf-8"))
+return
+elif url_path == "/api/get_lessons":
+self.send_response(200)
+self.send_header("Content-type", "application/json")
+self.end_headers()
+self.wfile.write(json.dumps(DB_LESSONS).encode("utf-8"))
+return
+if url_path == "/" or url_path == "/index.html":
+self.send_response(200)
+self.send_header("Content-type", "text/html; charset=utf-8")
+self.end_headers()
+self.wfile.write(HTML_CODE.encode("utf-8"))
+return
+super().do_GET()
+def do_POST(self):
+url_path = urlparse(self.path).path
+content_length = int(self.headers["Content-Length"])
+post_data = self.rfile.read(content_length).decode("utf-8")
+params = parse_qs(post_data)
+if url_path == "/api/check_quiz":
+if params.get("index", [""]) == params.get("correct", [""]):
+session_data["quiz_score"] += 1
+response = {"status": "success"}
+else:
+response = {"status": "fail"}
+self.send_response(200)
+self.send_header("Content-type", "application/json")
+self.end_headers()
+self.wfile.write(json.dumps(response).encode("utf-8"))
+return
+elif url_path == "/api/check_trainer":
+user_ans = params.get("user_ans", [""])[0]
+correct_ans = params.get("correct_ans", [""])[0]
+if user_ans == correct_ans:
+session_data["train_score"] += 1
+response = {"status": "success"}
+else:
+response = {"status": "fail"}
+self.send_response(200)
+self.send_header("Content-type", "application/json")
+self.end_headers()
+self.wfile.write(json.dumps(response).encode("utf-8"))
+return
+elif url_path == "/api/translate":
+text = params.get("text", [""])[0]
+result = TRANSLATE_DICT.get(text, "Фраза не найдена в словаре")
+response = {"result": result}
+self.send_response(200)
+self.send_header("Content-type", "application/json")
+self.end_headers()
+self.wfile.write(json.dumps(response).encode("utf-8"))
+return
+elif url_path == "/api/check_lesson":
+user_ans = params.get("user_ans", [""])[0]
+correct_ans = params.get("correct_ans", [""])[0]
+if user_ans == correct_ans:
+session_data["lessons_completed"] += 1
+response = {"status": "success"}
+else:
+response = {"status": "fail"}
+self.send_response(200)
+self.send_header("Content-type", "application/json")
+self.end_headers()
+self.wfile.write(json.dumps(response).encode("utf-8"))
+return
+if name == 'main':
+server = http.http.server.HTTPServer(('0.0.0.0', PORT), AdvancedRouterHandler)
+print(f"Сервер успешно запущен на порту {PORT}")
+server.serve_forever()

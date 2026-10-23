@@ -370,7 +370,7 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
                                     content_length = int(self.headers["Content-Length"])
                                     post_data = self.rfile.read(content_length).decode("utf-8")
                                     params = parse_qs(post_data)
-                                if url_path == "/api/check_quiz":
+                            if url_path == "/api/check_quiz":
                                 if params.get("index", [""]) == params.get("correct", [""]):
                                     session_data["quiz_score"] += 1
                                     response = {"status":"success"}

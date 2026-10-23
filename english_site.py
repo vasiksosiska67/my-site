@@ -340,26 +340,25 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
                                 self.send_response(200)
                                 self.send_header("Content-type", "application/json")
                                 self.end_headers()
-                            # тут ваш код для quiz, если он есть
-                                return
+                                 return
                             if url_path == "/api/get_word":
                                 self.send_response(200)
                                 self.send_header("Content-type", "application/json")
                                 self.end_headers()
                                 self.wfile.write(json.dumps(random.choice(DB_WORDS)).encode("utf-8"))
-                                return
+                                 return
                             if url_path == "/api/get_lessons":
                                 self.send_response(200)
                                 self.send_header("Content-type", "application/json")
                                 self.end_headers()
                                 self.wfile.write(json.dumps(DB_LESSONS).encode("utf-8"))
-                            return
+                                 return
                             if url_path == "/" or url_path == "/index.html":
                                 self.send_response(200)
                                 self.send_header("Content-type", "text/html; charset=utf-8")
                                 self.end_headers()
                                 self.wfile.write(HTML_CODE.encode("utf-8"))
-                                return
+                                 return
                                 super().do_GET()
                             def do_POST(self):
                                     url_path = urlparse(self.path).path
@@ -389,7 +388,7 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
                                         self.send_header("Content-type", "application/json")
                                         self.end_headers()
                                         self.wfile.write(json.dumps(response).encode("utf-8"))
-                                        return
+                                         return
                                 elif url_path == "/api/translate":
                                         text = params.get("text", [""])[0]
                                         result = TRANSLATE_DICT.get(text, "Фраза не найдена в словаре")
@@ -398,7 +397,7 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
                                         self.send_header("Content-type", "application/json")
                                         self.end_headers()
                                         self.wfile.write(json.dumps(response).encode("utf-8"))
-                                        return
+                                         return
                                 elif url_path == "/api/check_lesson":
                                     user_ans = params.get("user_ans", [""])[0]
                                     correct_ans = params.get("correct_ans", [""])[0]
@@ -406,12 +405,12 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
                                     session_data["lessons_completed"] += 1
                                     response = {"status": "success"}
                                     else:
-                                    response = {"status": "fail"}
-                                    self.send_response(200)
-                                    self.send_header("Content-type", "application/json")
-                                    self.end_headers()
-                                    self.wfile.write(json.dumps(response).encode("utf-8"))
-                                    return
+                                        response = {"status": "fail"}
+                                        self.send_response(200)
+                                        self.send_header("Content-type", "application/json")
+                                        self.end_headers()
+                                        self.wfile.write(json.dumps(response).encode("utf-8"))
+                                         return
 if name == 'main':
 server = http.http.server.HTTPServer(('0.0.0.0', PORT), AdvancedRouterHandler)
 print(f"Сервер успешно запущен на порту {PORT}")

@@ -1,11 +1,7 @@
 import http.server
 import json
-import os  # Добавили для связи с сервером Render
 import random
 from urllib.parse import parse_qs, urlparse
-
-# Порт теперь автоматически берется от сервера Render, либо ставится 8095 для компьютера
-PORT = int(os.environ.get(app.run(host='0.0.0.0', port=8000)))
 
 DB_QUIZ = [
     {

@@ -363,8 +363,8 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
                                 self.send_header("Content-type", "text/html; charset=utf-8")
                                 self.end_headers()
                                 self.wfile.write(HTML_CODE.encode("utf-8"))
-                            return
-                    super().do_GET()
+                                return
+                                super().do_GET()
                         def do_POST(self):
                                     url_path = urlparse(self.path).path
                                     content_length = int(self.headers["Content-Length"])

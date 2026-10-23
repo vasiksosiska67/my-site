@@ -417,6 +417,7 @@ self.end_headers()
 self.wfile.write(json.dumps(response).encode("utf-8"))
 return
 if name == 'main':
+PORT = int(os.environ.get(app.run(host='0.0.0.0', port=8000)))
 server = http.http.server.HTTPServer(('0.0.0.0', PORT), AdvancedRouterHandler)
 print(f"Сервер успешно запущен на порту {PORT}")
 server.serve_forever()

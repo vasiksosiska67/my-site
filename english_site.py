@@ -331,8 +331,8 @@ updateStats();
 
 
 """
-    class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
-def do_GET(self):
+class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
 url_path = urlparse(self.path).path
 if url_path == "/api/get_stats":
 self.send_response(200)

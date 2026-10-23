@@ -334,9 +334,7 @@ updateStats();
 class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
    class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
        def do_GET(self):
-        url_path = urlparse(self.path).path
-
-       if url_path == "/api/get_stats":
+            if url_path == "/api/get_stats":
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
@@ -347,9 +345,10 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
-            # ... код для quiz ...
+            # тут ваш код для quiz, если он есть
             return
 
+        elif url_path == "/api/get_word":
         elif url_path == "/api/get_word":
             self.send_response(200)
             self.send_header("Content-type", "application/json")

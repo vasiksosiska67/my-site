@@ -328,92 +328,107 @@ updateStats();
 
 """
 class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
-   class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
-       def do_GET(self):
-            if url_path == "/api/get_stats":
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(session_data).encode("utf-8"))
-                             return
-                            if url_path == "/api/get_quiz":
-                                self.send_response(200)
-                                self.send_header("Content-type", "application/json")
-                                self.end_headers()
-                                 return
-                            if url_path == "/api/get_word":
-                                self.send_response(200)
-                                self.send_header("Content-type", "application/json")
-                                self.end_headers()
-                                self.wfile.write(json.dumps(random.choice(DB_WORDS)).encode("utf-8"))
-                                 return
-                            if url_path == "/api/get_lessons":
-                                self.send_response(200)
-                                self.send_header("Content-type", "application/json")
-                                self.end_headers()
-                                self.wfile.write(json.dumps(DB_LESSONS).encode("utf-8"))
-                                 return
-                            if url_path == "/" or url_path == "/index.html":
-                                self.send_response(200)
-                                self.send_header("Content-type", "text/html; charset=utf-8")
-                                self.end_headers()
-                                self.wfile.write(HTML_CODE.encode("utf-8"))
-                                 return
-                                super().do_GET()
-                            def do_POST(self):
-                                    url_path = urlparse(self.path).path
-                                    content_length = int(self.headers["Content-Length"])
-                                    post_data = self.rfile.read(content_length).decode("utf-8")
-                                    params = parse_qs(post_data)
-                            if url_path == "/api/check_quiz":
-                                if params.get("index", [""]) == params.get("correct", [""]):
-                                    session_data["quiz_score"] += 1
-                                    response = {"status":"success"}
-                                    else:
-                                        response = {"status":"fail"}
-                                        self.send_response(200)
-                                        self.send_header("Content-type", "application/json")
-                                        self.end_headers()
-                                        self.wfile.write(json.dumps(response).encode("utf-8"))
-                                    return
-                                elif url_path == "/api/check_trainer":
-                                        user_ans = params.get("user_ans", [""])[0]
-                                        correct_ans = params.get("correct_ans", [""])[0]
-                                    if user_ans == correct_ans:
-                                        session_data["train_score"] += 1
-                                        response = {"status": "success"}
-                                    else:
-                                        response = {"status": "fail"}
-                                        self.send_response(200)
-                                        self.send_header("Content-type", "application/json")
-                                        self.end_headers()
-                                        self.wfile.write(json.dumps(response).encode("utf-8"))
-                                         return
-                                elif url_path == "/api/translate":
-                                        text = params.get("text", [""])[0]
-                                        result = TRANSLATE_DICT.get(text, "Фраза не найдена в словаре")
-                                        response = {"result": result}
-                                        self.send_response(200)
-                                        self.send_header("Content-type", "application/json")
-                                        self.end_headers()
-                                        self.wfile.write(json.dumps(response).encode("utf-8"))
-                                         return
-                                elif url_path == "/api/check_lesson":
-                                    user_ans = params.get("user_ans", [""])[0]
-                                    correct_ans = params.get("correct_ans", [""])[0]
-                                if user_ans == correct_ans:
-                                    session_data["lessons_completed"] += 1
-                                    response = {"status": "success"}
-                                    else:
-                                        response = {"status": "fail"}
-                                        self.send_response(200)
-                                        self.send_header("Content-type", "application/json")
-                                        self.end_headers()
-                                        self.wfile.write(json.dumps(response).encode("utf-8"))
-                                         return
+
+    def do_GET(self):
+        url_path = urlparse(self.path).path
+
+        if url_path == "/api/get_stats":
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(session_data).encode("utf-8"))
+            return
+
+        if url_path == "/api/get_quiz":
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            return
+
+        if url_path == "/api/get_word":
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(random.choice(DB_WORDS)).encode("utf-8"))
+            return
+
+        if url_path == "/api/get_lessons":
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(DB_LESSONS).encode("utf-8"))
+            return
+
+        if url_path == "/" or url_path == "/index.html":
+            self.send_response(200)
+            self.send_header("Content-type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(HTML_CODE.encode("utf-8"))
+            return
+
+        super().do_GET()
+
+    def do_POST(self):
+        url_path = urlparse(self.path).path
+        content_length = int(self.headers.get("Content-Length", 0))
+        post_data = self.rfile.read(content_length).decode("utf-8")
+        params = parse_qs(post_data)
+
+        if url_path == "/api/check_quiz":
+            if params.get("index", [""]) == params.get("correct", [""]):
+                session_data["quiz_score"] += 1
+                response = {"status": "success"}
+            else:
+                response = {"status": "fail"}
+            
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode("utf-8"))
+            return
+
+        if url_path == "/api/check_trainer":
+            user_ans = params.get("user_ans", [""])[0]
+            correct_ans = params.get("correct_ans", [""])[0]
+            if user_ans == correct_ans:
+                session_data["train_score"] += 1
+                response = {"status": "success"}
+            else:
+                response = {"status": "fail"}
+            
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode("utf-8"))
+            return
+
+        if url_path == "/api/translate":
+            text = params.get("text", [""])[0]
+            result = TRANSLATE_DICT.get(text, "Фраза не найдена в словаре")
+            response = {"result": result}
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode("utf-8"))
+            return
+
+        if url_path == "/api/check_lesson":
+            user_ans = params.get("user_ans", [""])[0]
+            correct_ans = params.get("correct_ans", [""])[0]
+            if user_ans == correct_ans:
+                session_data["lessons_completed"] += 1
+                response = {"status": "success"}
+            else:
+                response = {"status": "fail"}
+            
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode("utf-8"))
+            return
+
 if __name__ == '__main__':
     PORT = int(os.environ.get("PORT", 8000))
     server = http.server.HTTPServer(('0.0.0.0', PORT), AdvancedRouterHandler)
     print(f"Сервер успешно запущен на порту {PORT}")
     server.serve_forever()
-

@@ -1,7 +1,9 @@
 import http.server
 import json
 import random
-from urllib.parse import parse_qs, urlparse
+import os  # Вот эту строчку мы просто дописываем в самое начало!
+from urllib.parse import urlparse, parse_qs
+
 
 DB_QUIZ = [
     {

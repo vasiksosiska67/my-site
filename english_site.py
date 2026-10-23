@@ -5,7 +5,7 @@ import random
 from urllib.parse import parse_qs, urlparse
 
 # Порт теперь автоматически берется от сервера Render, либо ставится 8095 для компьютера
-PORT = int(os.environ.get('PORT', 8095))
+PORT = int(os.environ.get(app.run(host='0.0.0.0', port=8000)))
 
 DB_QUIZ = [
     {
@@ -417,7 +417,6 @@ self.end_headers()
 self.wfile.write(json.dumps(response).encode("utf-8"))
 return
 if name == 'main':
-PORT = int(os.environ.get(app.run(host='0.0.0.0', port=8000)))
 server = http.http.server.HTTPServer(('0.0.0.0', PORT), AdvancedRouterHandler)
 print(f"Сервер успешно запущен на порту {PORT}")
 server.serve_forever()

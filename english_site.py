@@ -376,9 +376,9 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
                         if url_path == "/api/check_quiz":
                         if params.get("index", [""]) == params.get("correct", [""]):
                             session_data["quiz_score"] += 1
-                            response = {"status": "success"}
+                            response = {"status":"success"}
                             else:
-                            response = {"status": "fail"}
+                            response = {"status":"fail"}
                             self.send_response(200)
                             self.send_header("Content-type", "application/json")
                             self.end_headers()

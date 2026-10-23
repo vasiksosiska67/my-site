@@ -342,8 +342,7 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(session_data).encode("utf-8"))
             return
-
-            elif url_path == "/api/get_quiz":
+        elif url_path == "/api/get_quiz":
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()

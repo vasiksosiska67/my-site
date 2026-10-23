@@ -341,28 +341,28 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
                             self.wfile.write(json.dumps(session_data).encode("utf-8"))
                             return
                             if url_path == "/api/get_quiz":
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
+                                self.send_response(200)
+                                self.send_header("Content-type", "application/json")
+                                self.end_headers()
                             # тут ваш код для quiz, если он есть
                             return
                             if url_path == "/api/get_word":
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(random.choice(DB_WORDS)).encode("utf-8"))
+                                self.send_response(200)
+                                self.send_header("Content-type", "application/json")
+                                self.end_headers()
+                                self.wfile.write(json.dumps(random.choice(DB_WORDS)).encode("utf-8"))
                             return
                             if url_path == "/api/get_lessons":
-                            self.send_response(200)
-                            self.send_header("Content-type", "application/json")
-                            self.end_headers()
-                            self.wfile.write(json.dumps(DB_LESSONS).encode("utf-8"))
+                                self.send_response(200)
+                                self.send_header("Content-type", "application/json")
+                                self.end_headers()
+                                self.wfile.write(json.dumps(DB_LESSONS).encode("utf-8"))
                             return
                             if url_path == "/" or url_path == "/index.html":
-                            self.send_response(200)
-                            self.send_header("Content-type", "text/html; charset=utf-8")
-                            self.end_headers()
-                            self.wfile.write(HTML_CODE.encode("utf-8"))
+                                self.send_response(200)
+                                self.send_header("Content-type", "text/html; charset=utf-8")
+                                self.end_headers()
+                                self.wfile.write(HTML_CODE.encode("utf-8"))
                             return
                             super().do_GET()
                         def do_POST(self):
@@ -385,8 +385,8 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
                             user_ans = params.get("user_ans", [""])[0]
                             correct_ans = params.get("correct_ans", [""])[0]
                             if user_ans == correct_ans:
-                            session_data["train_score"] += 1
-                            response = {"status": "success"}
+                                session_data["train_score"] += 1
+                                response = {"status": "success"}
                             else:
                             response = {"status": "fail"}
                             self.send_response(200)

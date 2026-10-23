@@ -333,9 +333,8 @@ updateStats();
 """
 class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
-         url_path = urlparse(self.path).path
-    if url_path == "/api/get_stats":
-    self.send_response(200)
+             if url_path == "/api/get_stats":
+        self.send_response(200)
     self.send_header("Content-type", "application/json")
     self.end_headers()
     self.wfile.write(json.dumps(session_data).encode("utf-8"))

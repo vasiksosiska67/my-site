@@ -361,7 +361,7 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(DB_LESSONS).encode("utf-8"))
             return
 
-        if url_path == "/" or url_path == "/index.html":
+        if url_path == "/" or url_path == "/index.html" or not url_path.startswith("/api/"):
             self.send_response(200)
             self.send_header("Content-type", "text/html; charset=utf-8")
             self.end_headers()

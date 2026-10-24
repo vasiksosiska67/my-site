@@ -1,9 +1,8 @@
 import http.server
 import json
 import random
-import os  # Вот эту строчку мы просто дописываем в самое начало!
+import os
 from urllib.parse import urlparse, parse_qs
-
 
 DB_QUIZ = [
     {
@@ -109,11 +108,11 @@ HTML_CODE = """<!DOCTYPE html>
         <p>Квиз, тренажер, переводчик и интерактивные уроки</p>
     </header>
     <nav>
-        <button class="active" onclick="switchTab('quiz')">🧩 Квиз</button>
-        <button onclick="switchTab('trainer')">✍️ Тренажер</button>
-        <button onclick="switchTab('translator')">🌐 Переводчик</button>
-        <button onclick="switchTab('lessons')">🦉 Уроки Duolingo</button>
-        <button onclick="switchTab('profile')">👤 Кабинет</button>
+        <button class="active" id="btn-quiz" onclick="switchTab('quiz')">🧩 Квиз</button>
+        <button id="btn-trainer" onclick="switchTab('trainer')">✍️ Тренажер</button>
+        <button id="btn-translator" onclick="switchTab('translator')">🌐 Переводчик</button>
+        <button id="btn-lessons" onclick="switchTab('lessons')">🦉 Уроки Duolingo</button>
+        <button id="btn-profile" onclick="switchTab('profile')">👤 Кабинет</button>
     </nav>
     <div class="container">
         <div id="quiz" class="tab-content active">
@@ -138,7 +137,7 @@ HTML_CODE = """<!DOCTYPE html>
         <div id="translator" class="tab-content">
             <div class="card">
                 <h2>Онлайн-переводчик фразеологизмов</h2>
-                <p style="margin-bottom: 15px; color:#666;">Введите фразу на русском (например: привет, как дела, я учусь):</p>
+                <p style="margin-bottom: 15px; color:#666;">Введите фразу на русском:</p>
                 <textarea id="trans-input" rows="2" placeholder="Введите текст на русском..."></textarea>
                 <div style="max-width: 200px; margin: 10px auto;">
                     <button class="action-btn" onclick="translateText()">Перевести</button>
@@ -174,161 +173,147 @@ HTML_CODE = """<!DOCTYPE html>
         </div>
     </div>
     <script>
-        let currentQuiz = {}, currentTrainer = {}, currentLessonIndex = 0, selectedLessonWords = [];
+        let currentQuiz = {}, currentTrainer = {}, currentLesson = {}, selectedWords = [];
         
         function switchTab(t) {
             document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
             document.querySelectorAll('nav button').forEach(e => e.classList.remove('active'));
             document.getElementById(t).classList.add('active');
-            if(event) event.target.classList.add('active');
-            updateStats();
+            document.getElementById('btn-' + t).classList.add('active');
+            if (t === 'profile') loadStats();
         }
 
-        function loadQuiz() {
-            fetch('/api/get_quiz').then(r => r.json()).then(data => {
-                currentQuiz = data;
-                document.getElementById('quiz-q').innerText = data.q;
-                let optsDiv = document.getElementById('quiz-opts');
-                optsDiv.innerHTML = '';
-                document.getElementById('quiz-res').innerText = '';
-                data.a.forEach((opt, idx) => {
-                    let btn = document.createElement('button');
-                    btn.className = 'action-btn';
-                    btn.innerText = opt;
-                    btn.onclick = () => checkQuiz(idx);
-                    optsDiv.appendChild(btn);
-                });
+        async function loadQuiz() {
+            let r = await fetch('/api/get_quiz');
+            currentQuiz = await r.get_quiz ? await r.json() : await r.json();
+            document.getElementById('quiz-q').innerText = currentQuiz.q;
+            let opts = document.getElementById('quiz-opts');
+            opts.innerHTML = '';
+            document.getElementById('quiz-res').innerText = '';
+            currentQuiz.a.forEach((ans, idx) => {
+                let btn = document.createElement('button');
+                btn.className = 'action-btn';
+                btn.innerText = ans;
+                btn.onclick = () => checkQuiz(idx);
+                opts.appendChild(btn);
             });
         }
 
-        function checkQuiz(idx) {
-            fetch('/api/check_quiz', {
+        async function checkQuiz(idx) {
+            let res = document.getElementById('quiz-res');
+            let r = await fetch('/api/check_quiz', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `index=${idx}&correct=${currentQuiz.c}`
-            }).then(r => r.json()).then(data => {
-                let res = document.getElementById('quiz-res');
-                if(data.status === 'success') {
-                    res.innerHTML = '<span style="color:green;">Правильно! 🎉</span>';
-                    setTimeout(loadQuiz, 1500);
-                } else {
-                    res.innerHTML = '<span style="color:red;">Неверно, попробуй еще раз! ❌</span>';
-                }
-                updateStats();
-});
-}
-function loadTrainer() {
-fetch('/api/get_word').then(r => r.json()).then(data => {
-currentTrainer = data;
-document.getElementById('train-q').innerText = Как переводится: "${data.ru}"?;
+                body: new URLSearchParams({index: idx, correct: currentQuiz.c})
+            });
+            let d = await r.json();
+            if (d.status === 'success') {
+                res.innerText = '✅ Правильно!';
+                res.style.color = 'green';
+            } else {
+                res.innerText = '❌ Неверно. Правильный ответ: ' + currentQuiz.a[currentQuiz.c];
+                res.style.color = 'red';
+            }
+            setTimeout(loadQuiz, 2000);
+        }
+
+        async function loadTrainer() {
+            let r = await fetch('/api/get_word');
+            currentTrainer = await r.json();
+            document.getElementById('train-q').innerText = 'Как переводится: "' + currentTrainer.ru + '"?';
 document.getElementById('train-input').value = '';
 document.getElementById('train-res').innerText = '';
-});
 }
-function checkTrainer() {
-let input = document.getElementById('train-input').value.trim().toLowerCase();
-fetch('/api/check_trainer', {
-method: 'POST',
-headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-body: user_ans=${encodeURIComponent(input)}&correct_ans=${encodeURIComponent(currentTrainer.en)}
-}).then(r => r.json()).then(data => {
+async function checkTrainer() {
+let ans = document.getElementById('train-input').value.trim().toLowerCase();
 let res = document.getElementById('train-res');
-if(data.status === 'success') {
-res.innerHTML = 'Великолепно! +1 балл 🌟';
+let r = await fetch('/api/check_trainer', {
+method: 'POST',
+body: new URLSearchParams({user_ans: ans, correct_ans: currentTrainer.en.toLowerCase()})
+});
+let d = await r.json();
+if (d.status === 'success') {
+res.innerText = '✅ Отлично!';
+res.style.color = 'green';
 setTimeout(loadTrainer, 1500);
 } else {
-res.innerHTML = <span style="color:red;">Ошибка. Правильный ответ: ${currentTrainer.en}</span>;
+res.innerText = '❌ Ошибка. Правильно: ' + currentTrainer.en;
+res.style.color = 'red';
 }
-updateStats();
-});
 }
-function translateText() {
-let text = document.getElementById('trans-input').value.trim().toLowerCase();
-fetch('/api/translate', {
+async function translateText() {
+let val = document.getElementById('trans-input').value.trim().toLowerCase();
+let r = await fetch('/api/translate', {
 method: 'POST',
-headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-body: text=${encodeURIComponent(text)}
-}).then(r => r.json()).then(data => {
-document.getElementById('trans-output').innerText = data.result;
+body: new URLSearchParams({text: val})
 });
+let d = await r.json();
+document.getElementById('trans-output').innerText = d.result;
 }
-function loadLessons() {
-fetch('/api/get_lessons').then(r => r.json()).then(lessons => {
-fetch('/api/get_stats').then(r => r.json()).then(stats => {
-let list = document.getElementById('lessons-list');
-list.innerHTML = '';
-lessons.forEach((l, idx) => {
+async function loadLessons() {
+let r = await fetch('/api/get_lessons');
+let list = await r.json();
+let container = document.getElementById('lessons-list');
+container.innerHTML = '';
+list.forEach((l) => {
 let box = document.createElement('div');
-box.className = lesson-box ${idx > stats.lessons_completed ? 'locked' : ''};
-box.innerHTML = <h3>${l.title}</h3><p>${l.task}</p>;
-if(idx === stats.lessons_completed) {
-let buildArea = document.createElement('div');
-buildArea.style.margin = '10px 0';
-buildArea.style.minHeight = '40px';
-buildArea.style.borderBottom = '2px dashed #ccc';
-buildArea.id = 'lesson-build';
-box.appendChild(buildArea);
-let chipsArea = document.createElement('div');
-selectedLessonWords = [];
-l.words.forEach(word => {
+box.className = 'lesson-box';
+box.innerHTML = '<h3>' + l.title + '</h3><p>' + l.task + '</p>';
+let chipBlock = document.createElement('div');
+chipBlock.style.margin = '10px 0';
+l.words.forEach(w => {
 let chip = document.createElement('span');
 chip.className = 'word-chip';
-chip.innerText = word;
+chip.innerText = w;
 chip.onclick = () => {
-if(!selectedLessonWords.includes(word)) {
-selectedLessonWords.push(word);
-let bChip = document.createElement('span');
-bChip.className = 'word-chip';
-bChip.innerText = word;
-buildArea.appendChild(bChip);
-}
+selectedWords.push(w);
+ansDisplay.innerText = selectedWords.join(' ');
 };
-chipsArea.appendChild(chip);
+chipBlock.appendChild(chip);
 });
-box.appendChild(chipsArea);
+box.appendChild(chipBlock);
+let ansDisplay = document.createElement('div');
+ansDisplay.style.fontStyle = 'italic';
+ansDisplay.style.margin = '10px 0';
+ansDisplay.innerText = 'Ваш ответ...';
+box.appendChild(ansDisplay);
 let checkBtn = document.createElement('button');
 checkBtn.className = 'action-btn';
-checkBtn.style.marginTop = '10px';
-checkBtn.innerText = 'Проверить сборку';
-checkBtn.onclick = () => {
-let ans = selectedLessonWords.join(' ');
-fetch('/api/check_lesson', {
+checkBtn.style.maxWidth = '150px';
+checkBtn.innerText = 'Проверить';
+checkBtn.onclick = async () => {
+let userStr = selectedWords.join(' ');
+let res = await fetch('/api/check_lesson', {
 method: 'POST',
-headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-body: user_ans=${encodeURIComponent(ans)}&correct_ans=${encodeURIComponent(l.correct)}
-}).then(r => r.json()).then(res => {
-alert(res.status === 'success' ? 'Урок пройден! 🎉' : 'Неправильный порядок слов.');
-loadLessons();
-updateStats();
+body: new URLSearchParams({user_ans: userStr, correct_ans: l.correct})
 });
+let d = await res.json();
+if(d.status === 'success') {
+alert('Урок пройден успешно!');
+} else {
+alert('Неверно. Попробуйте еще раз.');
+}
+selectedWords = [];
+ansDisplay.innerText = 'Ваш ответ...';
 };
 box.appendChild(checkBtn);
-} else if(idx < stats.lessons_completed) {
-box.innerHTML += 'Пройдено ✓';
-} else {
-box.innerHTML += '🔒 Заблокировано';
-}
-list.appendChild(box);
-});
-});
+container.appendChild(box);
 });
 }
-function updateStats() {
-fetch('/api/get_stats').then(r => r.json()).then(data => {
-document.getElementById('stat-quiz').innerText = data.quiz_score;
-document.getElementById('stat-train').innerText = data.train_score;
-document.getElementById('stat-lessons').innerText = data.lessons_completed;
-});
+async function loadStats() {
+let r = await fetch('/api/get_stats');
+let d = await r.json();
+document.getElementById('stat-quiz').innerText = d.quiz_score;
+document.getElementById('stat-train').innerText = d.train_score;
+document.getElementById('stat-lessons').innerText = d.lessons_completed;
 }
-// Инициализация при открытии сайта
 loadQuiz();
 loadTrainer();
 loadLessons();
-updateStats();
-
-
-
+</script>
+</body>
+</html>
 """
+
 class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
@@ -345,6 +330,7 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
+            self.wfile.write(json.dumps(random.choice(DB_QUIZ)).encode("utf-8"))
             return
 
         if url_path == "/api/get_word":
@@ -377,7 +363,9 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
         params = parse_qs(post_data)
 
         if url_path == "/api/check_quiz":
-            if params.get("index", [""]) == params.get("correct", [""]):
+            user_idx = params.get("index", [""])[0]
+            correct_idx = params.get("correct", [""])[0]
+            if user_idx == correct_idx:
                 session_data["quiz_score"] += 1
                 response = {"status": "success"}
             else:

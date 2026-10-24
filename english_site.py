@@ -5,6 +5,7 @@ import os
 from urllib.parse import urlparse, parse_qs
 from flask import Flask, jsonify, request, session, render_template
 app = Flask(__name__)
+app.secret_key = 'super-secret-key-for-session'
 
 DB_QUIZ = [
     {
@@ -1069,7 +1070,6 @@ DB_LESSONS = [
     },
 ]
 
-
 TRANSLATE_DICT = {
     # === Базовая вежливость и приветствия ===
     "привет": "hello / hi / hey",
@@ -1188,7 +1188,57 @@ TRANSLATE_DICT = {
     "только наличные": "cash only",
     "удачи в учебе": "good luck with your studies / happy learning"
 }
+@app.route('/')
+def index():
+    if 'coins' not in session:
+        session['coins'] = 0
+    return HTML_CODE
 
+# 3. ВСЕ НЕОБХОДИМЫЕ API ДЛЯ ЗАГРУЗКИ ДАННЫХ И МОНЕТ
+@app.route('/api/get_quiz')
+def get_quiz():
+    # Отдаем случайный квиз, чтобы убрать надпись "Загрузка..."
+    return jsonify(random.choice(DB_QUIZ))
+
+@app.route('/api/get_lessons')
+def get_lessons():
+    return jsonify(DB_LESSONS)
+
+@app.route('/api/get_coins')
+def get_coins():
+    return jsonify({"coins": session.get('coins', 0)})
+
+@app.route('/api/buy_item', methods=['POST'])
+def buy_item():
+    item_type = request.form.get('item')
+    coins = session.get('coins', 0)
+    if item_type == 'skip' and coins >= 30:
+        session['coins'] = coins - 30
+        return jsonify({"status": "success"})
+    return jsonify({"status": "error", "message": "Недостаточно монет или товар не найден"})
+
+@app.route('/api/check_trainer', methods=['POST'])
+def check_trainer():
+    # Заглушка для тренажера, чтобы он работал успешно
+    session['coins'] = session.get('coins', 0) + 10
+    return jsonify({"status": "success"})
+
+@app.route('/api/check_lesson', methods=['POST'])
+def check_lesson():
+    user_ans = request.form.get('user_ans')
+    correct_ans = request.form.get('correct_ans')
+    if user_ans == correct_ans:
+        session['coins'] = session.get('coins', 0) + 10
+        return jsonify({"status": "success"})
+    return jsonify({"status": "error"})
+
+@app.route('/api/translate', methods=['POST'])
+def translate():
+    return jsonify({"result": "Перевод готов"})
+
+@app.route('/api/get_stats')
+def get_stats():
+    return jsonify({"quiz_score": 0, "train_score": 0, "lessons_completed": 0})
 session_data = {"quiz_score": 0, "train_score": 0, "lessons_completed": 0}
 
 HTML_CODE = """<!DOCTYPE html>

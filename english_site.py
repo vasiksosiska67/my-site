@@ -3,6 +3,7 @@ import json
 import random
 import os
 from urllib.parse import urlparse, parse_qs
+from flask import Flask, jsonify, request, session, render_template
 app = Flask(__name__)
 
 DB_QUIZ = [

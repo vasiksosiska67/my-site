@@ -1512,34 +1512,6 @@ updateCoins();
 
 
 """
-# Инициализация переменной монет в сессии пользователя (если её ещё нет)
-def get_user_session_coins():
-    if 'coins' not in session:
-        session['coins'] = 0
-    return session['coins']
-
-@app.route('/api/get_coins', methods=['GET'])
-def get_coins():
-    from flask import jsonify, session
-    # Возвращаем текущие монеты пользователя
-    coins = session.get('coins', 0)
-    return jsonify({"coins": coins})
-
-@app.route('/api/buy_item', methods=['POST'])
-def buy_item():
-    from flask import request, jsonify, session
-    item_type = request.form.get('item')
-    coins = session.get('coins', 0)
-    
-    if item_type == 'skip':
-        if coins >= 30:
-            session['coins'] = coins - 30
-            # Здесь можно добавить логику перехода на следующий урок в сессии
-            return jsonify({"status": "success"})
-        else:
-            return jsonify({"status": "error", "message": "Недостаточно монет!"})
-            
-    return jsonify({"status": "error", "message": "Товар не найден"})
 
 
 class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):

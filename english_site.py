@@ -1,9 +1,10 @@
 import http.server
 import json
-import random
 import os
-from urllib.parse import urlparse, parse_qs
-from flask import Flask, jsonify, request, session, render_template
+import random
+from urllib.parse import parse_qs, urlparse
+from flask import Flask, jsonify, render_template, request, session
+
 app = Flask(__name__)
 app.secret_key = 'super-secret-key-for-session'
 
@@ -215,7 +216,6 @@ DB_QUIZ = [
     }
 ]
 
-
 DB_WORDS = [
     # Качества и описания (Прилагательные)
     {"ru": "красивый", "en": "beautiful"},
@@ -266,7 +266,6 @@ DB_WORDS = [
     {"ru": "тренажер", "en": "trainer"}
 ]
 
-
 DB_LESSONS = [
     {
         "id": 1,
@@ -284,7 +283,8 @@ DB_LESSONS = [
         "correct": "I like English",
         "reward": 10,
     },
-    {
+
+      {
         "id": 3,
         "title": "Урок 3: Работа",
         "task": "Соберите фразу: 'Я работаю здесь'",
@@ -414,7 +414,7 @@ DB_LESSONS = [
     },
     {
         "id": 19,
-        "title": "Урок 19: Транспорт",
+        "title": "Урок 19: Transport",
         "task": "Соберите фразу: 'У него есть машина'",
         "words": ["car", "has", "a", "He"],
         "correct": "He has a car",
@@ -620,6 +620,7 @@ DB_LESSONS = [
         "correct": "May I come in",
         "reward": 10,
     },
+
     {
         "id": 45,
         "title": "Урок 45: Опыт",
@@ -796,6 +797,14 @@ DB_LESSONS = [
         "correct": "I did not expect to see you here",
         "reward": 10,
     },
+      {
+        "id": 66,
+        "title": "Урок 66: Удивление",
+        "task": "Соберите фразу: 'Я не ожидал увидеть тебя здесь'",
+        "words": ["here", "you", "see", "to", "expect", "did", "not", "I"],
+        "correct": "I did not expect to see you here",
+        "reward": 10,
+    },
     {
         "id": 67,
         "title": "Урок 67: Извинение",
@@ -875,7 +884,7 @@ DB_LESSONS = [
         "words": ["mistakes", "such", "making", "avoid", "should", "You"],
         "correct": "You should avoid making such mistakes",
         "reward": 10,
-},
+    },
     {
         "id": 77,
         "title": "Урок 77: Каузатив",
@@ -903,7 +912,7 @@ DB_LESSONS = [
     {
         "id": 80,
         "title": "Урок 80: Мнение",
-        "task": "Соберите фразу: 'Насколько я могу судить, это правда'",
+        "task": "Соберите фразу: 'Нашколько я могу судить, это правда'",
         "words": ["true", "is", "it", "concerned", "am", "I", "as", "far", "As"],
         "correct": "As far as I am concerned it is true",
         "reward": 10,
@@ -1124,7 +1133,7 @@ TRANSLATE_DICT = {
     "на воре и шапка горит": "if the shoe fits, wear it",
     "куй железо, пока горячо": "strike while the iron is hot",
 
-    # === Разговорные фразы и реакции в диалоге ===
+     # === Разговорные фразы и реакции в диалоге ===
     "я имею в виду": "i mean",
     "кстати": "by the way / anyway",
     "на самом деле": "actually / in fact",
@@ -1185,9 +1194,10 @@ TRANSLATE_DICT = {
     "где вход": "where is the entrance?",
     "сделайте скидку": "can i get a discount?",
     "примите карту": "do you accept cards?",
-    "только наличные": "cash only",
+    "only наличные": "cash only",
     "удачи в учебе": "good luck with your studies / happy learning"
 }
+
 @app.route('/')
 def index():
     if 'coins' not in session:
@@ -1205,7 +1215,7 @@ def get_lessons():
     return jsonify(DB_LESSONS)
 
 @app.route('/api/get_coins')
-def get_coins():
+def api_get_user_coins():  # Уникальное имя функции во избежание AssertionError
     return jsonify({"coins": session.get('coins', 0)})
 
 @app.route('/api/buy_item', methods=['POST'])
@@ -1222,7 +1232,6 @@ def check_trainer():
     # Заглушка для тренажера, чтобы он работал успешно
     session['coins'] = session.get('coins', 0) + 10
     return jsonify({"status": "success"})
-
 @app.route('/api/check_lesson', methods=['POST'])
 def check_lesson():
     user_ans = request.form.get('user_ans')
@@ -1239,6 +1248,7 @@ def translate():
 @app.route('/api/get_stats')
 def get_stats():
     return jsonify({"quiz_score": 0, "train_score": 0, "lessons_completed": 0})
+
 session_data = {"quiz_score": 0, "train_score": 0, "lessons_completed": 0}
 
 HTML_CODE = """<!DOCTYPE html>
@@ -1372,12 +1382,13 @@ HTML_CODE = """<!DOCTYPE html>
     </div>
 
     <script>
-        let currentQuiz = {}, currentTrainer = {}, currentLesson = {}, selectedWords = [];
+         let currentQuiz = {}, currentTrainer = {en: "apple"}, currentLesson = {}, selectedWords = [];
         
         function switchTab(t) {
             document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
             document.querySelectorAll('nav button').forEach(e => e.classList.remove('active'));
-            document.getElementById(t).classList.add('active');
+            let content = document.getElementById(t);
+            if(content) content.classList.add('active');
             let btn = document.getElementById('btn-' + t);
             if(btn) btn.classList.add('active');
             if (t === 'profile') loadStats();
@@ -1397,6 +1408,25 @@ HTML_CODE = """<!DOCTYPE html>
                 btn.onclick = () => checkQuiz(idx);
                 opts.appendChild(btn);
             });
+        }
+
+        function checkQuiz(idx) {
+            let res = document.getElementById('quiz-res');
+            if (idx === currentQuiz.c) {
+                res.innerText = "✅ Правильно! +10 монет";
+                res.style.color = "green";
+                // В реальной системе здесь можно добавить отправку запроса на начисление монет
+                setTimeout(loadQuiz, 1500);
+            } else {
+                res.innerText = "❌ Неверно, попробуйте еще раз.";
+                res.style.color = "red";
+            }
+        }
+
+        function loadTrainer() {
+            document.getElementById('train-q').innerText = "Как по-английски 'Яблоко'?";
+            document.getElementById('train-input').value = "";
+            document.getElementById('train-res').innerText = "";
         }
 
         async function updateCoins() {
@@ -1420,98 +1450,108 @@ HTML_CODE = """<!DOCTYPE html>
         }
 
         async function checkTrainer() {
-        let ans = document.getElementById('train-input').value.trim().toLowerCase();
-let res = document.getElementById('train-res');
-let r = await fetch('/api/check_trainer', {
-method: 'POST',
-body: new URLSearchParams({user_ans: ans, correct_ans: currentTrainer.en.toLowerCase()})
-});
-let d = await r.json();
-if (d.status === 'success') {
-res.innerText = '✅ Отлично! +10 монет';
-res.style.color = 'green';
-updateCoins();
-setTimeout(loadTrainer, 1500);
-} else {
-res.innerText = '❌ Ошибка. Правильно: ' + currentTrainer.en;
-res.style.color = 'red';
-}
-}
-async function translateText() {
-let val = document.getElementById('trans-input').value.trim().toLowerCase();
-let r = await fetch('/api/translate', {
-method: 'POST',
-body: new URLSearchParams({text: val})
-});
-let d = await r.json();
-document.getElementById('trans-output').innerText = d.result;
-}
-async function loadLessons() {
-let r = await fetch('/api/get_lessons');
-let list = await r.json();
-let container = document.getElementById('lessons-list');
-container.innerHTML = '';
-list.forEach((l) => {
-let box = document.createElement('div');
-box.className = 'lesson-box';
-box.innerHTML = '' + l.title + '' + l.task + '';
-let chipBlock = document.createElement('div');
-chipBlock.style.margin = '10px 0';
-let ansDisplay = document.createElement('div');
-ansDisplay.style.fontStyle = 'italic';
-ansDisplay.style.margin = '10px 0';
-ansDisplay.innerText = 'Ваш ответ...';
-let lessonSelectedWords = [];
-l.words.forEach(w => {
-let chip = document.createElement('span');
-chip.className = 'word-chip';
-chip.innerText = w;
-chip.onclick = () => {
-lessonSelectedWords.push(w);
-ansDisplay.innerText = lessonSelectedWords.join(' ');
-};
-chipBlock.appendChild(chip);
-});
-box.appendChild(chipBlock);
-box.appendChild(ansDisplay);
-let checkBtn = document.createElement('button');
-checkBtn.className = 'action-btn';
-checkBtn.style.maxWidth = '150px';
-checkBtn.innerText = 'Проверить';
-checkBtn.onclick = async () => {
-let userStr = lessonSelectedWords.join(' ');
-let res = await fetch('/api/check_lesson', {
-method: 'POST',
-body: new URLSearchParams({user_ans: userStr, correct_ans: l.correct})
-});
-let d = await res.json();
-if(d.status === 'success') {
-alert('Урок пройден успешно! +10 монет');
-updateCoins();
-} else {
-alert('Неверно. Попробуйте еще раз.');
-}
-lessonSelectedWords = [];
-ansDisplay.innerText = 'Ваш ответ...';
-};
-box.appendChild(checkBtn);
-container.appendChild(box);
-});
-}
-async function loadStats() {
-let r = await fetch('/api/get_stats');
-let d = await r.json();
-document.getElementById('stat-quiz').innerText = d.quiz_score;
-document.getElementById('stat-train').innerText = d.train_score;
-document.getElementById('stat-lessons').innerText = d.lessons_completed;
-}
-loadQuiz();
-loadTrainer();
-loadLessons();
-updateCoins();
+            let ans = document.getElementById('train-input').value.trim().toLowerCase();
+            let res = document.getElementById('train-res');
+            let r = await fetch('/api/check_trainer', {
+                method: 'POST',
+                body: new URLSearchParams({user_ans: ans, correct_ans: currentTrainer.en.toLowerCase()})
+            });
+            let d = await r.json();
+            if (d.status === 'success') {
+                res.innerText = '✅ Отлично! +10 монет';
+                res.style.color = 'green';
+                updateCoins();
+                setTimeout(loadTrainer, 1500);
+            } else {
+                res.innerText = '❌ Ошибка. Правильно: ' + currentTrainer.en;
+                res.style.color = 'red';
+            }
+        }
 
+        async function translateText() {
+            let val = document.getElementById('trans-input').value.trim().toLowerCase();
+            let r = await fetch('/api/translate', {
+                method: 'POST',
+                body: new URLSearchParams({text: val})
+            });
+            let d = await r.json();
+            document.getElementById('trans-output').innerText = d.result;
+        }
 
-"""
+        async function loadLessons() {
+            let r = await fetch('/api/get_lessons');
+            let list = await r.json();
+            let container = document.getElementById('lessons-list');
+            container.innerHTML = '';
+            list.forEach((l) => {
+                let box = document.createElement('div');
+                box.className = 'lesson-box';
+                box.innerHTML = '<h3>' + l.title + '</h3><p>' + l.task + '</p>';
+                
+                let chipBlock = document.createElement('div');
+                chipBlock.style.margin = '10px 0';
+                
+                let ansDisplay = document.createElement('div');
+                ansDisplay.style.fontStyle = 'italic';
+                ansDisplay.style.margin = '10px 0';
+                ansDisplay.innerText = 'Ваш ответ...';
+                
+                let lessonSelectedWords = [];
+                
+                l.words.forEach(w => {
+                    let chip = document.createElement('span');
+                    chip.className = 'word-chip';
+                    chip.innerText = w;
+                    chip.onclick = () => {
+                        lessonSelectedWords.push(w);
+                        ansDisplay.innerText = lessonSelectedWords.join(' ');
+                    };
+                    chipBlock.appendChild(chip);
+                });
+                box.appendChild(chipBlock);
+                box.appendChild(ansDisplay);
+                
+                let checkBtn = document.createElement('button');
+                checkBtn.className = 'action-btn';
+                checkBtn.style.maxWidth = '150px';
+                checkBtn.innerText = 'Проверить';
+                checkBtn.onclick = async () => {
+                    let userStr = lessonSelectedWords.join(' ');
+                    let res = await fetch('/api/check_lesson', {
+                        method: 'POST',
+                        body: new URLSearchParams({user_ans: userStr, correct_ans: l.correct})
+                    });
+                    let d = await res.json();
+                    if(d.status === 'success') {
+                        alert('Урок пройден успешно! +10 монет');
+                        updateCoins();
+                    } else {
+                        alert('Неверно. Попробуйте еще раз.');
+                    }
+                    lessonSelectedWords = [];
+                    ansDisplay.innerText = 'Ваш ответ...';
+                };
+                box.appendChild(checkBtn);
+                container.appendChild(box);
+            });
+        }
+
+        async function loadStats() {
+            let r = await fetch('/api/get_stats');
+            let d = await r.json();
+            document.getElementById('stat-quiz').innerText = d.quiz_score;
+            document.getElementById('stat-train').innerText = d.train_score;
+            document.getElementById('stat-lessons').innerText = d.lessons_completed;
+        }
+
+        loadQuiz();
+        loadTrainer();
+        loadLessons();
+        updateCoins();
+    </script>
+</body>
+</html>"""
+
 
 
 class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
@@ -1547,6 +1587,15 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(DB_LESSONS).encode("utf-8"))
             return
 
+        if url_path == "/api/get_coins":
+            if "coins" not in session_data:
+                session_data["coins"] = 0
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"coins": session_data["coins"]}).encode("utf-8"))
+            return
+
         if url_path == "/" or url_path == "/index.html" or not url_path.startswith("/api/"):
             self.send_response(200)
             self.send_header("Content-type", "text/html; charset=utf-8")
@@ -1562,11 +1611,15 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
         post_data = self.rfile.read(content_length).decode("utf-8")
         params = parse_qs(post_data)
 
+        if "coins" not in session_data:
+            session_data["coins"] = 0
+
         if url_path == "/api/check_quiz":
             user_idx = params.get("index", [""])[0]
             correct_idx = params.get("correct", [""])[0]
             if user_idx == correct_idx:
                 session_data["quiz_score"] += 1
+                session_data["coins"] += 10
                 response = {"status": "success"}
             else:
                 response = {"status": "fail"}
@@ -1582,6 +1635,7 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
             correct_ans = params.get("correct_ans", [""])[0]
             if user_ans == correct_ans:
                 session_data["train_score"] += 1
+                session_data["coins"] += 10
                 response = {"status": "success"}
             else:
                 response = {"status": "fail"}
@@ -1607,9 +1661,24 @@ class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
             correct_ans = params.get("correct_ans", [""])[0]
             if user_ans == correct_ans:
                 session_data["lessons_completed"] += 1
+                session_data["coins"] += 10
                 response = {"status": "success"}
             else:
                 response = {"status": "fail"}
+            
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode("utf-8"))
+            return
+
+        if url_path == "/api/buy_item":
+            item_type = params.get("item", [""])[0]
+            if item_type == "skip" and session_data["coins"] >= 30:
+                session_data["coins"] -= 30
+                response = {"status": "success"}
+            else:
+                response = {"status": "error", "message": "Недостаточно монет или товар не найден"}
             
             self.send_response(200)
             self.send_header("Content-type", "application/json")
@@ -1622,3 +1691,6 @@ if __name__ == '__main__':
     server = http.server.HTTPServer(('0.0.0.0', PORT), AdvancedRouterHandler)
     print(f"Сервер успешно запущен на порту {PORT}")
     server.serve_forever()
+
+
+

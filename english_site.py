@@ -1195,19 +1195,8 @@ HTML_CODE = """<!DOCTYPE html>
     <meta charset="UTF-8">
     <title>Learn English Ultimate Pro</title>
     <style>
-    <!-- Блок с монетами в правом верхнем углу -->
-<div style="position: fixed; top: 10px; right: 10px; background: #fff; border: 2px solid #000; padding: 10px; border-radius: 8px; z-index: 1000; font-family: Arial, sans-serif;">
-    💰 Монеты: <strong>{{ coins }}</strong>
-</div>
-
-<!-- Вкладка магазина в левом верхнем углу -->
-<div style="position: fixed; top: 10px; left: 10px; z-index: 1000;">
-    <a href="/shop" style="background: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: Arial, sans-serif;">
-        🛒 Магазин
-    </a>
-</div>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: #f0f2f5; color: #333; padding-bottom: 60px; }
+        body { background: #f0f2f5; color: #333; padding-bottom: 60px; padding-top: 50px; }
         header { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 25px 20px; text-align: center; }
         header h1 { font-size: 2rem; margin-bottom: 5px; }
         nav { display: flex; justify-content: center; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); flex-wrap: wrap; }
@@ -1234,6 +1223,18 @@ HTML_CODE = """<!DOCTYPE html>
     </style>
 </head>
 <body>
+    <!-- Вкладка магазина в левом верхнем углу -->
+    <div style="position: fixed; top: 10px; left: 10px; z-index: 1001;">
+        <button onclick="switchTab('shop')" id="btn-shop" style="background: #28a745; color: white; padding: 10px 15px; border: none; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: Arial, sans-serif; cursor: pointer; font-size: 0.95rem; box-shadow: 0 2px 5px rgba(0,0,0,0.15);">
+            🛒 Магазин
+        </button>
+    </div>
+
+    <!-- Блок с монетами в правом верхнем углу -->
+    <div style="position: fixed; top: 10px; right: 10px; background: #fff; border: 2px solid #2a5298; padding: 9px 15px; border-radius: 8px; z-index: 1001; font-family: Arial, sans-serif; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.15); color: #333;">
+        💰 Монеты: <span id="user-coins-display" style="color: #2a5298; font-size: 1.05rem;">0</span>
+    </div>
+
     <header>
         <h1>English Learning Ultimate</h1>
         <p>Квиз, тренажер, переводчик и интерактивные уроки</p>
@@ -1246,6 +1247,23 @@ HTML_CODE = """<!DOCTYPE html>
         <button id="btn-profile" onclick="switchTab('profile')">👤 Кабинет</button>
     </nav>
     <div class="container">
+        <!-- Блок Вкладки Магазина -->
+        <div id="shop" class="tab-content">
+            <div class="card">
+                <h2>Магазин бонусов</h2>
+                <p style="margin-bottom: 20px; color: #666;">Тратьте заработанные монеты на полезные улучшения!</p>
+                <div style="display: flex; flex-direction: column; gap: 15px; max-width: 400px; margin: 0 auto;">
+                    <div style="background: #f8f9fa; border: 1px solid #ddd; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="text-align: left;">
+                            <strong style="display: block;">Пропуск урока</strong>
+                            <span style="font-size: 0.85rem; color: #666;">Позволяет пропустить сложный шаг</span>
+                        </div>
+                        <button class="action-btn" style="width: auto; background: #28a745; padding: 8px 12px;" onclick="buyItem('skip')">30 💰</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="quiz" class="tab-content active">
             <div class="card">
                 <h2>Проверка знаний (Идиомы)</h2>
@@ -1254,196 +1272,127 @@ HTML_CODE = """<!DOCTYPE html>
                 <div class="result" id="quiz-res"></div>
             </div>
         </div>
-        <div id="trainer" class="tab-content">
-            <div class="card">
-                <h2>Тренажер правописания</h2>
-                <div class="trainer-prompt" id="train-q">Загрузка...</div>
-                <input type="text" id="train-input" placeholder="Введите ответ на английском" autocomplete="off">
-                <div style="max-width: 200px; margin: 0 auto;">
-                    <button class="action-btn" onclick="checkTrainer()">Проверить</button>
-                </div>
-                <div class="result" id="train-res"></div>
-            </div>
-        </div>
-        <div id="translator" class="tab-content">
-            <div class="card">
-                <h2>Онлайн-переводчик фразеологизмов</h2>
-                <p style="margin-bottom: 15px; color:#666;">Введите фразу на русском:</p>
-                <textarea id="trans-input" rows="2" placeholder="Введите текст на русском..."></textarea>
-                <div style="max-width: 200px; margin: 10px auto;">
-                    <button class="action-btn" onclick="translateText()">Перевести</button>
-                </div>
-                <div class="trainer-prompt" style="margin-top:15px;">Результат перевода:</div>
-                <div id="trans-output" style="font-size:1.3rem; color:#2a5298; font-weight:bold; min-height:30px;"></div>
-            </div>
-        </div>
-        <div id="lessons" class="tab-content">
-            <div class="card">
-                <h2>Интерактивные уроки</h2>
-                <div id="lessons-list"></div>
-            </div>
-        </div>
-        <div id="profile" class="tab-content">
-            <div class="card">
-                <h2>Ваш прогресс в этой сессии</h2>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div>Квиз</div>
-                        <div class="stat-val" id="stat-quiz">0</div>
-                    </div>
-                    <div class="stat-item">
-                        <div>Слова</div>
-                        <div class="stat-val" id="stat-train">0</div>
-                    </div>
-                    <div class="stat-item">
-                        <div>Уроки</div>
-                        <div class="stat-val" id="stat-lessons">0</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <script>
-        let currentQuiz = {}, currentTrainer = {}, currentLesson = {}, selectedWords = [];
-        
-        function switchTab(t) {
-            document.querySelectorAll('.tab-content').forEach(e => e.classList.remove('active'));
-            document.querySelectorAll('nav button').forEach(e => e.classList.remove('active'));
-            document.getElementById(t).classList.add('active');
-            document.getElementById('btn-' + t).classList.add('active');
-            if (t === 'profile') loadStats();
-        }
 
-        async function loadQuiz() {
-            let r = await fetch('/api/get_quiz');
-            currentQuiz = await r.get_quiz ? await r.json() : await r.json();
-            document.getElementById('quiz-q').innerText = currentQuiz.q;
-            let opts = document.getElementById('quiz-opts');
-            opts.innerHTML = '';
-            document.getElementById('quiz-res').innerText = '';
-            currentQuiz.a.forEach((ans, idx) => {
-                let btn = document.createElement('button');
-                btn.className = 'action-btn';
-                btn.innerText = ans;
-                btn.onclick = () => checkQuiz(idx);
-                opts.appendChild(btn);
-            });
-        }
-
-        async function checkQuiz(idx) {
-            let res = document.getElementById('quiz-res');
-            let r = await fetch('/api/check_quiz', {
-                method: 'POST',
-                body: new URLSearchParams({index: idx, correct: currentQuiz.c})
-            });
-            let d = await r.json();
-            if (d.status === 'success') {
-                res.innerText = '✅ Правильно!';
-                res.style.color = 'green';
-            } else {
-                res.innerText = '❌ Неверно. Правильный ответ: ' + currentQuiz.a[currentQuiz.c];
-                res.style.color = 'red';
-            }
-            setTimeout(loadQuiz, 2000);
-        }
-
-        async function loadTrainer() {
-            let r = await fetch('/api/get_word');
-            currentTrainer = await r.json();
-            document.getElementById('train-q').innerText = 'Как переводится: "' + currentTrainer.ru + '"?';
-document.getElementById('train-input').value = '';
-document.getElementById('train-res').innerText = '';
+       async function updateCoins() {
+    let r = await fetch('/api/get_coins');
+    let d = await r.json();
+    document.getElementById('user-coins-display').innerText = d.coins;
 }
+
+async function buyItem(itemType) {
+    let r = await fetch('/api/buy_item', {
+        method: 'POST',
+        body: new URLSearchParams({ item: itemType })
+    });
+    let d = await r.json();
+    if (d.status === 'success') {
+        alert('Покупка совершена успешно!');
+        updateCoins();
+    } else {
+        alert('Ошибка: ' + d.message);
+    }
+}
+
 async function checkTrainer() {
-let ans = document.getElementById('train-input').value.trim().toLowerCase();
-let res = document.getElementById('train-res');
-let r = await fetch('/api/check_trainer', {
-method: 'POST',
-body: new URLSearchParams({user_ans: ans, correct_ans: currentTrainer.en.toLowerCase()})
-});
-let d = await r.json();
-if (d.status === 'success') {
-res.innerText = '✅ Отлично!';
-res.style.color = 'green';
-setTimeout(loadTrainer, 1500);
-} else {
-res.innerText = '❌ Ошибка. Правильно: ' + currentTrainer.en;
-res.style.color = 'red';
+    let ans = document.getElementById('train-input').value.trim().toLowerCase();
+    let res = document.getElementById('train-res');
+    let r = await fetch('/api/check_trainer', {
+        method: 'POST',
+        body: new URLSearchParams({user_ans: ans, correct_ans: currentTrainer.en.toLowerCase()})
+    });
+    let d = await r.json();
+    if (d.status === 'success') {
+        res.innerText = '✅ Отлично! +10 монет';
+        res.style.color = 'green';
+        updateCoins();
+        setTimeout(loadTrainer, 1500);
+    } else {
+        res.innerText = '❌ Ошибка. Правильно: ' + currentTrainer.en;
+        res.style.color = 'red';
+    }
 }
-}
+
 async function translateText() {
-let val = document.getElementById('trans-input').value.trim().toLowerCase();
-let r = await fetch('/api/translate', {
-method: 'POST',
-body: new URLSearchParams({text: val})
-});
-let d = await r.json();
-document.getElementById('trans-output').innerText = d.result;
+    let val = document.getElementById('trans-input').value.trim().toLowerCase();
+    let r = await fetch('/api/translate', {
+        method: 'POST',
+        body: new URLSearchParams({text: val})
+    });
+    let d = await r.json();
+    document.getElementById('trans-output').innerText = d.result;
 }
+
 async function loadLessons() {
-let r = await fetch('/api/get_lessons');
-let list = await r.json();
-let container = document.getElementById('lessons-list');
-container.innerHTML = '';
-list.forEach((l) => {
-let box = document.createElement('div');
-box.className = 'lesson-box';
-box.innerHTML = '<h3>' + l.title + '</h3><p>' + l.task + '</p>';
-let chipBlock = document.createElement('div');
-chipBlock.style.margin = '10px 0';
-l.words.forEach(w => {
-let chip = document.createElement('span');
-chip.className = 'word-chip';
-chip.innerText = w;
-chip.onclick = () => {
-selectedWords.push(w);
-ansDisplay.innerText = selectedWords.join(' ');
-};
-chipBlock.appendChild(chip);
-});
-box.appendChild(chipBlock);
-let ansDisplay = document.createElement('div');
-ansDisplay.style.fontStyle = 'italic';
-ansDisplay.style.margin = '10px 0';
-ansDisplay.innerText = 'Ваш ответ...';
-box.appendChild(ansDisplay);
-let checkBtn = document.createElement('button');
-checkBtn.className = 'action-btn';
-checkBtn.style.maxWidth = '150px';
-checkBtn.innerText = 'Проверить';
-checkBtn.onclick = async () => {
-let userStr = selectedWords.join(' ');
-let res = await fetch('/api/check_lesson', {
-method: 'POST',
-body: new URLSearchParams({user_ans: userStr, correct_ans: l.correct})
-});
-let d = await res.json();
-if(d.status === 'success') {
-alert('Урок пройден успешно!');
-} else {
-alert('Неверно. Попробуйте еще раз.');
+    let r = await fetch('/api/get_lessons');
+    let list = await r.json();
+    let container = document.getElementById('lessons-list');
+    container.innerHTML = '';
+    list.forEach((l) => {
+        let box = document.createElement('div');
+        box.className = 'lesson-box';
+        box.innerHTML = '<h3>' + l.title + '</h3><p>' + l.task + '</p>';
+        let chipBlock = document.createElement('div');
+        chipBlock.style.margin = '10px 0';
+        l.words.forEach(w => {
+            let chip = document.createElement('span');
+            chip.className = 'word-chip';
+            chip.innerText = w;
+            chip.onclick = () => {
+                selectedWords.push(w);
+                ansDisplay.innerText = selectedWords.join(' ');
+            };
+            chipBlock.appendChild(chip);
+        });
+        box.appendChild(chipBlock);
+        let ansDisplay = document.createElement('div');
+        ansDisplay.style.fontStyle = 'italic';
+        ansDisplay.style.margin = '10px 0';
+        ansDisplay.innerText = 'Ваш ответ...';
+        box.appendChild(ansDisplay);
+        let checkBtn = document.createElement('button');
+        checkBtn.className = 'action-btn';
+        checkBtn.style.maxWidth = '150px';
+        checkBtn.innerText = 'Проверить';
+        checkBtn.onclick = async () => {
+            let userStr = selectedWords.join(' ');
+            let res = await fetch('/api/check_lesson', {
+                method: 'POST',
+                body: new URLSearchParams({user_ans: userStr, correct_ans: l.correct})
+            });
+            let d = await res.json();
+            if(d.status === 'success') {
+                alert('Урок пройден успешно! +10 монет');
+                updateCoins();
+            } else {
+                alert('Неверно. Попробуйте еще раз.');
+            }
+            selectedWords = [];
+            ansDisplay.innerText = 'Ваш ответ...';
+        };
+        box.appendChild(checkBtn);
+        container.appendChild(box);
+    });
 }
-selectedWords = [];
-ansDisplay.innerText = 'Ваш ответ...';
-};
-box.appendChild(checkBtn);
-container.appendChild(box);
-});
-}
+
+// Вызываем обновление монет при первой загрузке страницы
+updateCoins();
 async function loadStats() {
-let r = await fetch('/api/get_stats');
-let d = await r.json();
-document.getElementById('stat-quiz').innerText = d.quiz_score;
-document.getElementById('stat-train').innerText = d.train_score;
-document.getElementById('stat-lessons').innerText = d.lessons_completed;
+    let r = await fetch('/api/get_stats');
+    let d = await r.json();
+    document.getElementById('stat-quiz').innerText = d.quiz_score;
+    document.getElementById('stat-train').innerText = d.train_score;
+    document.getElementById('stat-lessons').innerText = d.lessons_completed;
 }
+
 loadQuiz();
 loadTrainer();
 loadLessons();
+updateCoins();
 </script>
 </body>
 </html>
 """
+
 
 class AdvancedRouterHandler(http.server.SimpleHTTPRequestHandler):
 

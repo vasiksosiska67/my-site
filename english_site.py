@@ -1195,6 +1195,17 @@ HTML_CODE = """<!DOCTYPE html>
     <meta charset="UTF-8">
     <title>Learn English Ultimate Pro</title>
     <style>
+    <!-- Блок с монетами в правом верхнем углу -->
+<div style="position: fixed; top: 10px; right: 10px; background: #fff; border: 2px solid #000; padding: 10px; border-radius: 8px; z-index: 1000; font-family: Arial, sans-serif;">
+    💰 Монеты: <strong>{{ coins }}</strong>
+</div>
+
+<!-- Вкладка магазина в левом верхнем углу -->
+<div style="position: fixed; top: 10px; left: 10px; z-index: 1000;">
+    <a href="/shop" style="background: #28a745; color: white; padding: 10px 15px; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: Arial, sans-serif;">
+        🛒 Магазин
+    </a>
+</div>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background: #f0f2f5; color: #333; padding-bottom: 60px; }
         header { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 25px 20px; text-align: center; }
